@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Document</title>
+</head>
+<style>
+  * {
+    font-size: 30px;
+  }
+</style>
+<script>
+  window.showWebDialog = text => window.alert(text)
+
+  document.addEventListener('DOMContentLoaded', (e) => {
+    const editText = document.querySelector('#editText')
+    const showBtn = document.querySelector('#showBtn')
+    showBtn.addEventListener('click', (e) => {
+      const inputValue = editText.value
+      showNativeDialog(inputValue)
+    })
+  })
+
+  function showNativeDialog(text) {
+    window.alert('jsbridge://showNativeDialog?text=' + text)
+  }
+</script>
+<body>
+  <div>
+    <input type="text" id="editText" placeholder="请输入内容"/>
+  </div>
+  <div>
+    <button id="showBtn">显示Native弹窗</button>
+  </div>
+</body>
+</html>
