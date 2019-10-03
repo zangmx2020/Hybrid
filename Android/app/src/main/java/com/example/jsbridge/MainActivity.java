@@ -15,6 +15,8 @@ import android.widget.EditText;
 import android.widget.Toast;
 
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -22,7 +24,9 @@ public class MainActivity extends AppCompatActivity {
     private EditText editText;
     private Button showBtn;
     private Button refreshBtn;
+    private Button inputBtn;
     private MainActivity self = this;
+    private NativeSDK nativeSDK = new NativeSDK(this);
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,6 +37,7 @@ public class MainActivity extends AppCompatActivity {
         editText = findViewById(R.id.editText);
         showBtn = findViewById(R.id.showBtn);
         refreshBtn = findViewById(R.id.refreshBtn);
+        inputBtn = findViewById(R.id.inputBtn);
 
         webView.loadUrl("http://192.168.1.9:8080?timestamp=" + new Date().getTime());
         webView.getSettings().setJavaScriptEnabled(true);
@@ -73,6 +78,19 @@ public class MainActivity extends AppCompatActivity {
                 webView.loadUrl("http://192.168.1.9:8080?timestamp=" + new Date().getTime());
             }
         });
+
+//      获取web输入值
+        inputBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                nativeSDK.getWebEditTextValue(new Callback() {
+                    @Override
+                    public void invoke(String value) {
+                        new AlertDialog.Builder(self).setMessage("Web 输入值: " + value).create().show();
+                    }
+                });
+            }
+        });
     }
 
 //    URL Scheme 拦截
@@ -85,6 +103,37 @@ public class MainActivity extends AppCompatActivity {
         new AlertDialog.Builder(this).setMessage(text).create().show();
     }
 
+    interface Callback {
+        void invoke(String value);
+    }
+
+    class NativeSDK {
+        private Context ctx;
+        private int id = 1;
+        private Map<Integer, Callback> callbackMap = new HashMap();
+        NativeSDK(Context ctx) {
+            this.ctx = ctx;
+        }
+
+        void getWebEditTextValue(Callback callback) {
+            int callbackId = id++;
+            callbackMap.put(callbackId, callback);
+            final String jsCode = String.format("window.JSSDK.getWebEditTextValue(%s)", callbackId);
+            ((MainActivity)ctx).runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    ((MainActivity)ctx).webView.evaluateJavascript(jsCode, null);
+                }
+            });
+        }
+
+        void receiveMessage(int callbackId, String value) {
+            if (callbackMap.containsKey(callbackId)) {
+                callbackMap.get(callbackId).invoke(value);
+            }
+        }
+    }
+
 //    API 注入
     class NativeBridge {
         private Context ctx;
@@ -95,6 +144,24 @@ public class MainActivity extends AppCompatActivity {
         @JavascriptInterface
         public void showNativeDialog(String text) {
             new AlertDialog.Builder(ctx).setMessage(text).create().show();
+        }
+
+        @JavascriptInterface
+        public void getNativeEditTextValue(int callbackId) {
+            final MainActivity mainActivity = (MainActivity)ctx;
+            String value = mainActivity.editText.getText().toString();
+            final String jsCode = String.format("window.JSSDK.receiveMessage(%s, '%s')", callbackId, value);
+            mainActivity.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    mainActivity.webView.evaluateJavascript(jsCode, null);
+                }
+            });
+        }
+
+        @JavascriptInterface
+        public void receiveMessage(int callbackId, String value) {
+            ((MainActivity)ctx).nativeSDK.receiveMessage(callbackId, value);
         }
     }
 }

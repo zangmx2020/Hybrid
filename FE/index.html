@@ -12,14 +12,40 @@
   }
 </style>
 <script>
+  let id = 1
+  const callbackMap = {}
+  window.JSSDK = {
+    getWebEditTextValue(callbackId) {
+      const editText = document.querySelector('#editText')
+      const value = editText.value
+      NativeBridge.receiveMessage(callbackId, value)
+    },
+    getNativeEditTextValue(callback) {
+      const callbackId = id++
+      callbackMap[callbackId] = callback
+      NativeBridge.getNativeEditTextValue(callbackId)
+    },
+    receiveMessage(callbackId, value) {
+      if (callbackMap[callbackId]) {
+        callbackMap[callbackId](value)
+      }
+    }
+  }
+
+  // App
   window.showWebDialog = text => window.alert(text)
 
   document.addEventListener('DOMContentLoaded', (e) => {
     const editText = document.querySelector('#editText')
     const showBtn = document.querySelector('#showBtn')
+    const inputBtn = document.querySelector('#inputBtn')
     showBtn.addEventListener('click', (e) => {
       const inputValue = editText.value
       showNativeDialog(inputValue)
+    })
+
+    inputBtn.addEventListener('click', (e) => {
+      window.JSSDK.getNativeEditTextValue(value => window.alert('Native 输入值: ' + value))
     })
   })
 
@@ -34,6 +60,7 @@
   </div>
   <div>
     <button id="showBtn">显示Native弹窗</button>
+    <button id="inputBtn">获取Native输入</button>
   </div>
 </body>
 </html>
