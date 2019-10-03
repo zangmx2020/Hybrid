@@ -3,8 +3,10 @@ package com.example.jsbridge;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.Context;
 import android.os.Bundle;
 import android.view.View;
+import android.webkit.JavascriptInterface;
 import android.webkit.JsResult;
 import android.webkit.WebChromeClient;
 import android.webkit.WebView;
@@ -35,21 +37,27 @@ public class MainActivity extends AppCompatActivity {
         webView.loadUrl("http://192.168.1.9:8080?timestamp=" + new Date().getTime());
         webView.getSettings().setJavaScriptEnabled(true);
 
-        webView.setWebChromeClient(new WebChromeClient() {
-            @Override
-            public boolean onJsAlert(WebView view, String url, String message, JsResult result) {
-                if (!message.startsWith("jsbridge://")) {
-                    return super.onJsAlert(view, url, message, result);
-                }
+//        JSBridge - URL Scheme 拦截
+//        webView.setWebChromeClient(new WebChromeClient() {
+//            @Override
+//            public boolean onJsAlert(WebView view, String url, String message, JsResult result) {
+//                if (!message.startsWith("jsbridge://")) {
+//                    return super.onJsAlert(view, url, message, result);
+//                }
+//
+//                String text = message.substring(message.indexOf("=") + 1);
+//                self.showNativeDialog(text);
+//
+//                result.confirm();
+//                return true;
+//            }
+//        });
 
-                String text = message.substring(message.indexOf("=") + 1);
-                self.showNativeDialog(text);
+//      JSBridge - API 注入
+        webView.setWebChromeClient(new WebChromeClient());
+        webView.addJavascriptInterface(new NativeBridge(this), "NativeBridge");
 
-                result.confirm();
-                return true;
-            }
-        });
-
+//      显示btn
         showBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -58,6 +66,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+//      刷新btn
         refreshBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -66,6 +75,7 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+//    URL Scheme 拦截
     private void showWebDialog(String text) {
         String jsCode = String.format("window.showWebDialog('%s')", text);
         webView.evaluateJavascript(jsCode, null);
@@ -73,5 +83,18 @@ public class MainActivity extends AppCompatActivity {
 
     private void showNativeDialog(String text) {
         new AlertDialog.Builder(this).setMessage(text).create().show();
+    }
+
+//    API 注入
+    class NativeBridge {
+        private Context ctx;
+        NativeBridge(Context ctx) {
+            this.ctx = ctx;
+        }
+
+        @JavascriptInterface
+        public void showNativeDialog(String text) {
+            new AlertDialog.Builder(ctx).setMessage(text).create().show();
+        }
     }
 }
