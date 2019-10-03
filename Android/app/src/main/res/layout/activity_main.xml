@@ -44,6 +44,14 @@
             android:text="刷新Web页面"
             android:textSize="30sp"
             />
+
+        <Button
+            android:id="@+id/inputBtn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="获取Web输入"
+            android:textSize="30sp"
+            />
     </LinearLayout>
 
 </LinearLayout>
