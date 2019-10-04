@@ -11,55 +11,28 @@
     font-size: 30px;
   }
 </style>
+<script src="https://unpkg.com/dsbridge@3.1.4/dist/dsbridge.js"></script>
 <script>
-  let id = 1
-  const callbackMap = {}
-  window.JSSDK = {
-    getWebEditTextValue(callbackId) {
-      const editText = document.querySelector('#editText')
-      const value = editText.value
-      NativeBridge.receiveMessage(callbackId, value)
-    },
-    getNativeEditTextValue(callback) {
-      const callbackId = id++
-      callbackMap[callbackId] = callback
-      NativeBridge.getNativeEditTextValue(callbackId)
-    },
-    receiveMessage(callbackId, value) {
-      if (callbackMap[callbackId]) {
-        callbackMap[callbackId](value)
-      }
-    }
-  }
-
-  // App
-  window.showWebDialog = text => window.alert(text)
-
-  document.addEventListener('DOMContentLoaded', (e) => {
+  // 注册一个 javascript API供原生调用
+  dsBridge.register('getWebEditTextValue', () => {
     const editText = document.querySelector('#editText')
-    const showBtn = document.querySelector('#showBtn')
-    const inputBtn = document.querySelector('#inputBtn')
-    showBtn.addEventListener('click', (e) => {
-      const inputValue = editText.value
-      showNativeDialog(inputValue)
-    })
-
-    inputBtn.addEventListener('click', (e) => {
-      window.JSSDK.getNativeEditTextValue(value => window.alert('Native 输入值: ' + value))
-    })
+    return editText.value
   })
 
-  function showNativeDialog(text) {
-    // window.alert('jsbridge://showNativeDialog?text=' + text)
-    window.NativeBridge.showNativeDialog(text)
-  }
+  document.addEventListener('DOMContentLoaded', (e) => {
+    const inputBtn = document.querySelector('#inputBtn')
+    inputBtn.addEventListener('click', (e) => {
+      dsBridge.call('getNativeEditTextValue', '', (value) => {
+        window.alert('Native输入值: ' + value)
+      })
+    })
+  })
 </script>
 <body>
   <div>
     <input type="text" id="editText" placeholder="请输入内容"/>
   </div>
   <div>
-    <button id="showBtn">显示Native弹窗</button>
     <button id="inputBtn">获取Native输入</button>
   </div>
 </body>
