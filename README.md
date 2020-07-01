@@ -4,9 +4,9 @@
 
 ### Branch
 
-- master
-- feature/JSBridge-API
+- master(feature/JSBridge-DSBridge)
 - feature/JSBridge-URL-Schema
+- feature/JSBridge-API
 - feature/JSBridge-callback
 - feature/JSBridge-DSBridge
 
